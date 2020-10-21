@@ -18,12 +18,11 @@ def reformat_mean_height(origin_dataframe):
     headers = list(origin_dataframe)
 
     var = 'Mean Height'
-    index = [i for i, elem in enumerate(headers) if var in elem]
+    index = [i for i, elem in enumerate(headers) if var in elem] #Get the index of the mean height field in the header
     if len(index) > 0:
         if len(index) == 1: 
             col_val = headers[index[0]]
-            #We just need to create a column in the df for Age at Measurement
-            #age = [int(x) for x in col_val.split() if x.isdigit()] #doesn't catch decimal 
+            #We just need to create a column in the df for Age at Measurement 
             age = []
             header_sep =col_val.split()
             for element in header_sep:
@@ -39,8 +38,8 @@ def reformat_mean_height(origin_dataframe):
             new_df = origin_dataframe.copy()
 
 
-        elif len(index) > 1:
-            col_val_list = []
+        elif len(index) > 1: #If there is more than one record for mean height
+            col_val_list = [] #We will make a list of column headers 
             ages = []
             for idx in index:
                 col_val_list.append(headers[idx])
@@ -58,7 +57,7 @@ def reformat_mean_height(origin_dataframe):
             origin_dataframe.rename(columns={'col_name':'Age at Height Measurement (years)'}, inplace=True)
             origin_dataframe.rename(columns={col_val_list[0]:'Mean Height (m)'}, inplace=True)
             count = 1
-            copied_dfs = []
+            copied_dfs = [] #We will make a copy of each df for each record, then overwrite the values into the copied dataframe
 
             for header_name in col_val_list[1:]:#Skip the first one, which name we just overwrote, will stay the same.
                 if count >= 1:
@@ -78,7 +77,7 @@ def reformat_mean_height(origin_dataframe):
             for header_name in col_val_list:
                 if header_name in new_headers:
                     new_df.drop(header_name, axis=1, inplace=True)  
-            new_df['ID'] = np.arange(len(new_df))
+            new_df['ID'] = np.arange(len(new_df)) #Create an ID column because Provenance ID can no longer be the primary key 
 
             #print(new_df[['Provenance ID','Mean Height (m)','Age at Height Measurement (years)']])
 
