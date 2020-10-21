@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 import os,sys
@@ -21,7 +20,7 @@ def export_frm_access(access_file,file_out,tbl):
      cur = conn.cursor()
      #Get the header 
      header = cur.execute("SELECT * FROM "+'['+tbl+"] WHERE 1=0")
-     columnList = [tuple[0] for tuple in header.description]
+     columnList = [tuple[0] for tuple in header.description] #Get the list of column names
 
      #Connect to the cursor and get everything from the table 
 
@@ -44,7 +43,7 @@ def rename_no_spaces(file_path):
      [os.rename(os.path.join(file_path, f), os.path.join(file_path, f).replace(' ', '_'))\
       for f in os.listdir(file_path)]
      [os.rename(os.path.join(file_path, f), os.path.join(file_path, f).replace(',', ''))\
-      for f in os.listdir(file_path)]
+      for f in os.listdir(file_path)] #Get rid of the extra comma
      
 if __name__ == "__main__":
      access_file = '' #Path to .accdb
