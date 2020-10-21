@@ -37,6 +37,15 @@ def export_frm_access(access_file,file_out,tbl):
      cur.close()
      conn.close()
 
+def rename_no_spaces(file_path):
+     '''Rename the csv files so that they do not have spaces or commas, which makes it easier
+     for user to import files to programs such as ArcMap.'''
+
+     [os.rename(os.path.join(file_path, f), os.path.join(file_path, f).replace(' ', '_'))\
+      for f in os.listdir(file_path)]
+     [os.rename(os.path.join(file_path, f), os.path.join(file_path, f).replace(',', ''))\
+      for f in os.listdir(file_path)]
+     
 if __name__ == "__main__":
      access_file = '' #Path to .accdb
      file_out = '' #Path to output location
