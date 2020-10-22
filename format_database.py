@@ -12,17 +12,20 @@ import numpy as np
 import format_clim_data_for_databases as fc
 
     
-def reformat_mean_height(origin_dataframe):
-    '''Convert the mean height data in the database to the following format: Mean Height (m), Age at Measurement.
+def reformat(origin_dataframe):
+    '''Convert the original tables data in the database to the following format: Mean Height (m), Age at Height Measurement, Survival (%), Age at Survival Measurement.
     This is for easier data analysis.'''
     headers = list(origin_dataframe)
 
     var = 'Mean Height'
-    index = [i for i, elem in enumerate(headers) if var in elem] #Get the index of the mean height field in the header
-    if len(index) > 0:
-        if len(index) == 1: 
+    var2 = 'Survival'
+    index = [i for i, elem in enumerate(headers) if var in elem]
+    index2 = [i for i, elem in enumerate(headers) if var2 in elem]
+    if len(index) > 0 or len(index2) > 0:
+        if len(index) == 1 and len(index2) <=1:
+
             col_val = headers[index[0]]
-            #We just need to create a column in the df for Age at Measurement 
+            #We just need to create a column in the df for Age at Measurement
             age = []
             header_sep =col_val.split()
             for element in header_sep:
@@ -35,11 +38,37 @@ def reformat_mean_height(origin_dataframe):
             origin_dataframe = origin_dataframe.assign(col_name=age[0]) #Add the age column
             origin_dataframe.rename(columns={'col_name':'Age at Height Measurement (years)'}, inplace=True)
             origin_dataframe.rename(columns={col_val:'Mean Height (m)'}, inplace=True)
+
+        #Survival
+            if len(index2) == 1:
+                print('check') 
+                col_val2 = headers[index2[0]]
+                #We just need to create a column in the df for Age at Measurement
+                age2 = []
+                header_sep2 =col_val2.split()
+                for element in header_sep2:
+                    try:
+                        age2.append(float(element))
+                    except:
+                        pass
+                origin_dataframe = origin_dataframe.assign(col_name2=age2[0]) #Add the age column
+                origin_dataframe.rename(columns={'col_name2':'Age at Survival Measurement (years)'}, inplace=True)
+                origin_dataframe.rename(columns={col_val2:'Survival (%)'}, inplace=True)
+                
+
+            if len(index2) == 0:
+                print('check4')
+                origin_dataframe = origin_dataframe.assign(col_name1=-9999) #Add the height column
+                origin_dataframe.rename(columns={'col_name1':'Survival (%)'}, inplace=True)
+                origin_dataframe = origin_dataframe.assign(col_name2=-9999) #Add the age column
+                origin_dataframe.rename(columns={'col_name2':'Age at Survival Measurement (years)'}, inplace=True)
+                
             new_df = origin_dataframe.copy()
 
+        elif len(index) > 1 or len(index2) >1:
 
-        elif len(index) > 1: #If there is more than one record for mean height
-            col_val_list = [] #We will make a list of column headers 
+
+            col_val_list = []
             ages = []
             for idx in index:
                 col_val_list.append(headers[idx])
@@ -52,43 +81,167 @@ def reformat_mean_height(origin_dataframe):
                         ages.append([float(element)])
                     except:
                         pass
-        
-            origin_dataframe = origin_dataframe.assign(col_name=ages[0][0])
-            origin_dataframe.rename(columns={'col_name':'Age at Height Measurement (years)'}, inplace=True)
-            origin_dataframe.rename(columns={col_val_list[0]:'Mean Height (m)'}, inplace=True)
-            count = 1
-            copied_dfs = [] #We will make a copy of each df for each record, then overwrite the values into the copied dataframe
+            try: 
+                origin_dataframe = origin_dataframe.assign(col_name=ages[0][0])
+                origin_dataframe.rename(columns={'col_name':'Age at Height Measurement (years)'}, inplace=True)
+                origin_dataframe.rename(columns={col_val_list[0]:'Mean Height (m)'}, inplace=True)
+            except:
+                
+                print('Could not add height column! Please check the data.') 
 
-            for header_name in col_val_list[1:]:#Skip the first one, which name we just overwrote, will stay the same.
-                if count >= 1:
-                    
-                    copy_df = origin_dataframe.copy()
-                    copy_df['Mean Height (m)'] = copy_df[header_name]
-                    copy_df['Age at Height Measurement (years)'] = ages[count][0]
-                    copy_df.drop(header_name, axis=1, inplace=True)
-                    origin_dataframe.drop(header_name, axis=1, inplace=True)  
-                    copied_dfs.append(copy_df)
-                    count+=1
-                else:
-                    count+=1
+            #Survival
+            col_val_list2 = []
+            ages2 = []
+            for idx in index2:
+                col_val_list2.append(headers[idx])
+            for header_name2 in col_val_list2:
+                header_sep2 =header_name2.split(' ')
+                for element2 in header_sep2: 
+                    try: 
+                        ages2.append([float(element2)])
+                    except:
+                        pass
+
+            try: 
+                
+                origin_dataframe = origin_dataframe.assign(col_name2=ages2[0][0])
+                origin_dataframe.rename(columns={'col_name2':'Age at Survival Measurement (years)'}, inplace=True)
+                origin_dataframe.rename(columns={col_val_list2[0]:'Survival (%)'}, inplace=True)
+            except:
+                origin_dataframe = origin_dataframe.assign(col_name1=-9999) #Add the height column
+                origin_dataframe.rename(columns={'col_name1':'Survival (%)'}, inplace=True)
+                origin_dataframe = origin_dataframe.assign(col_name2=-9999) #Add the age column
+                origin_dataframe.rename(columns={'col_name2':'Age at Survival Measurement (years)'}, inplace=True)
+                print('No survival detected!') #no survival in dataframe
+            
+            copied_dfs = []
+            if len(col_val_list) > len(col_val_list2):
+                alert_unmatched = [] 
+                count = 0
+                skipped_counts = 0
+                for header_name in col_val_list:#Skip the first one, which name we just overwrote, will stay the same.
+                    if count >= 1:
+                        
+                        copy_df = origin_dataframe.copy()
+                        copy_df['Mean Height (m)'] = origin_dataframe[header_name]
+                        copy_df['Age at Height Measurement (years)'] = ages[count][0]
+                        check_count =count-skipped_counts
+                        if check_count <= len(col_val_list2)-1:
+
+                            if ages2[check_count][0] == ages[count][0]: 
+
+                                copy_df['Survival (%)'] = origin_dataframe[col_val_list2[check_count]]
+                                copy_df['Age at Survival Measurement (years)'] = ages2[check_count][0]
+                                copy_df.drop(col_val_list2[check_count], axis=1, inplace=True)
+                                origin_dataframe.drop(col_val_list2[check_count], axis=1, inplace=True)
+                                
+                            else:
+                                if [ages2[check_count][0]] in ages: 
+                                    copy_df['Survival (%)'] = -9999
+                                    copy_df['Age at Survival Measurement (years)'] = -9999
+                                else:
+                                    alert_unmatched.append((col_val_list2[check_count],ages2[check_count][0]))
+                                
+                                skipped_counts += 1 
+                        else:
+                            if len(col_val_list2) > 0:
+                                copy_df['Survival (%)'] = -9999
+                                copy_df['Age at Survival Measurement (years)'] = -9999
+
+                        copy_df.drop(header_name, axis=1, inplace=True)
+                        origin_dataframe.drop(header_name, axis=1, inplace=True)
+
+                        copied_dfs.append(copy_df)
+                        count+=1
+                    else:
+                        count+=1
+
+                if len(alert_unmatched) > 0: #We need to make some extra copies for the unmatched survival data
+                    for unmatched_header,unmatched_age in alert_unmatched: 
+                        copy_df = origin_dataframe.copy()
+                        copy_df['Mean Height (m)'] = -9999
+                        copy_df['Age at Height Measurement (years)'] = -9999
+                        copy_df['Survival (%)'] = origin_dataframe[unmatched_header]
+                        copy_df['Age at Survival Measurement (years)'] = unmatched_age
+                        copy_df.drop(unmatched_header, axis=1, inplace=True)
+                        origin_dataframe.drop(unmatched_header, axis=1, inplace=True)
+                
+            else:
+                count = 0
+                alert_unmatched = []
+                skipped_counts = 0
+                for header_name in col_val_list2:#Skip the first one, which name we just overwrote, will stay the same.
+                    if count >= 1:
+
+                        copy_df = origin_dataframe.copy()
+                        copy_df['Survival (%)'] = origin_dataframe[header_name]
+                        copy_df['Age at Survival Measurement (years)'] = ages2[count][0]
+                        check_count =count-skipped_counts
+                        if check_count <= len(col_val_list)-1:
+                            if ages[check_count][0] == ages2[count][0]: 
+
+                                copy_df['Mean Height (m)'] = origin_dataframe[col_val_list[count]]
+                                copy_df['Age at Height Measurement (years)'] = ages[count][0]
+                                copy_df.drop(col_val_list[count], axis=1, inplace=True)
+                                origin_dataframe.drop(col_val_list[count], axis=1, inplace=True)
+                            else:
+                                if [ages[check_count][0]] in ages2: 
+                                    copy_df['Mean Height (m)'] = -9999
+                                    copy_df['Age at Height Measurement (years)'] = -9999
+                                else:
+                                    alert_unmatched.append((col_val_list[check_count],ages[check_count][0]))
+                                
+                                skipped_counts += 1 
+                        else:
+                            if len(col_val_list) > 0: 
+                                copy_df['Mean Height (m)'] = -9999
+                                copy_df['Age at Height Measurement (years)'] = -9999
+
+                        copy_df.drop(header_name, axis=1, inplace=True)
+                        origin_dataframe.drop(header_name, axis=1, inplace=True)
+
+                        copied_dfs.append(copy_df)
+                        count+=1
+                    else:
+                        count+=1
+
+                if len(alert_unmatched) > 0: #We need to make some extra copies for the unmatched survival data
+                    for unmatched_header,unmatched_age in alert_unmatched: 
+                        copy_df = origin_dataframe.copy()
+                        copy_df['Survival (%)'] = -9999
+                        copy_df['Age at Survival Measurement (years)'] = -9999
+                        copy_df['Mean Height (m)'] = origin_dataframe[unmatched_header]
+                        copy_df['Age at Height Measurement (years)'] = unmatched_age
+                        copy_df.drop(unmatched_header, axis=1, inplace=True)
+                        origin_dataframe.drop(unmatched_header, axis=1, inplace=True)
 
             new_df = origin_dataframe.append(copied_dfs) #Append all the edited, copied dataframes
             new_headers = list(new_df)
-            for header_name in col_val_list:
+            for header_name in col_val_list+col_val_list2:
                 if header_name in new_headers:
                     new_df.drop(header_name, axis=1, inplace=True)  
-            new_df['ID'] = np.arange(len(new_df)) #Create an ID column because Provenance ID can no longer be the primary key 
-
-            #print(new_df[['Provenance ID','Mean Height (m)','Age at Height Measurement (years)']])
+            new_df['ID'] = np.arange(len(new_df))
 
     else:
-        print('No mean height record detected in table.')
+        print('No mean height or survival record detected in table.')
         #In this case, add empty column with -9999
         origin_dataframe = origin_dataframe.assign(col_name1=-9999) #Add the height column
         origin_dataframe.rename(columns={'col_name1':'Mean Height (m)'}, inplace=True)
         origin_dataframe = origin_dataframe.assign(col_name2=-9999) #Add the age column
         origin_dataframe.rename(columns={'col_name2':'Age at Height Measurement (years)'}, inplace=True)
+        origin_dataframe = origin_dataframe.assign(col_name3=-9999) #Add the survival column
+        origin_dataframe.rename(columns={'col_name3':'Survival (%)'}, inplace=True)
+        origin_dataframe = origin_dataframe.assign(col_name4=-9999) #Add the age column
+        origin_dataframe.rename(columns={'col_name4':'Age at Survival Measurement (years)'}, inplace=True)
         new_df = origin_dataframe.copy()
+    try: 
+        first_cols = ['ID','Provenance ID','Origin','Latitude','Longitude','Elevation (m)','Mean Height (m)','Survival (%)',\
+                          'Age at Height Measurement (years)','Age at Survival Measurement (years)']
+        new_df = new_df[ first_cols + [ col for col in new_df.columns if col not in first_cols ] ]
+    except: 
+        first_cols = ['ID','Provenance ID','Origin','Latitude','Longitude','Mean Height (m)','Survival (%)',\
+                          'Age at Height Measurement (years)','Age at Survival Measurement (years)']
+        new_df = new_df[ first_cols + [ col for col in new_df.columns if col not in first_cols ] ]
 
 
     return new_df
@@ -190,13 +343,12 @@ if __name__ == "__main__":
 
     for file in os.listdir(file_path):
         original_dataframe = fc.get_table(file_path+file,True)
-        mutated_df1 = reformat_mean_height(original_dataframe)
-        mutated_df2 = reformat_survival(mutated_df1)
-        mutated_df3 = add_empty_cols(mutated_df2)
-        print_to_csv(mutated_df3,file,export_path)
+        df1 = reformat(original_dataframe)
+        df2 = add_empty_cols(df1)
+        print_to_csv(df2,file,export_path)
 
-    for file in os.listdir(export_path):
-        if file.endswith('.csv'): #Otherwise it will pick up the already generated txt files and two records will show up
-            print(file)
-            original_dataframe = fc.get_table(export_path+file,True)
-            print_to_txt(original_dataframe,file,export_path)
+##    for file in os.listdir(export_path):
+##        if file.endswith('.csv'): #Otherwise it will pick up the already generated txt files and two records will show up
+##            print(file)
+##            original_dataframe = fc.get_table(export_path+file,True)
+##            print_to_txt(original_dataframe,file,export_path)
