@@ -93,103 +93,6 @@ def reformat_mean_height(origin_dataframe):
 
     return new_df
 
-def reformat_survival(origin_dataframe):
-    '''Convert the mean height data in the database to the following format: Mean Height (m), Age at Measurement.
-    This is for easier data analysis.'''
-    headers = list(origin_dataframe)
-
-    var = 'Survival'
-    index = [i for i, elem in enumerate(headers) if var in elem]
-    if len(index) > 0:
-        if len(index) == 1: 
-            col_val = headers[index[0]]
-            #We just need to create a column in the df for Age at Measurement
-            #age = [float(x) for x in col_val.split() if x.isdigit()]
-            age = []
-            header_sep =col_val.split()
-            for element in header_sep:
-                try:
-                    age.append(float(element))
-                except:
-                    pass
-            origin_dataframe = origin_dataframe.assign(col_name=age[0]) #Add the age column
-            origin_dataframe.rename(columns={'col_name':'Age at Survival Measurement (years)'}, inplace=True)
-            origin_dataframe.rename(columns={col_val:'Survival (%)'}, inplace=True)
-            new_df = origin_dataframe.copy()
-            try: 
-                first_cols = ['ID','Provenance ID','Origin','Latitude','Longitude','Elevation (m)','Mean Height (m)','Survival (%)',\
-                          'Age at Height Measurement (years)','Age at Survival Measurement (years)']
-                new_df = new_df[ first_cols + [ col for col in new_df.columns if col not in first_cols ] ]
-            except:
-                first_cols = ['ID','Provenance ID','Origin','Latitude','Longitude','Mean Height (m)','Survival (%)',\
-                          'Age at Height Measurement (years)','Age at Survival Measurement (years)']
-                new_df = new_df[ first_cols + [ col for col in new_df.columns if col not in first_cols ] ]
-            #print(new_df[['Provenance ID','Survival (%)','Age at Survival Measurement (years)']])
-
-        elif len(index) > 1:
-
-            col_val_list = []
-            ages = []
-            for idx in index:
-                col_val_list.append(headers[idx])
-            for header_name in col_val_list:
-                header_sep =header_name.split(' ')
-                for element in header_sep: 
-                    try: 
-                        ages.append([float(element)])
-                    except:
-                        pass
-            
-            origin_dataframe = origin_dataframe.assign(col_name=ages[0][0])
-            origin_dataframe.rename(columns={'col_name':'Age at Survival Measurement (years)'}, inplace=True)
-            origin_dataframe.rename(columns={col_val_list[0]:'Survival (%)'}, inplace=True)
-            count = 0
-            copied_dfs = []
-            for header_name in col_val_list:
-                if count >= 1: #Skip the first one, which name we just overwrote, will stay the same. 
-                    copy_df = origin_dataframe.copy()
-                    copy_df['Survival (%)'] = copy_df[header_name]
-                    copy_df['Age at Survival Measurement (years)'] = ages[count][0]
-                    copy_df.drop(header_name, axis=1, inplace=True)
-                    origin_dataframe.drop(header_name, axis=1, inplace=True)  
-                    copied_dfs.append(copy_df)
-                else:
-                    pass
-                count+=1
-
-            new_df = origin_dataframe.append(copied_dfs) #Append all the edited, copied dataframes
-            new_headers = list(new_df)
-            for header_name in col_val_list:
-                if header_name in new_headers:
-                    new_df.drop(header_name, axis=1, inplace=True)  
-            new_df['ID'] = np.arange(len(new_df))
-            try: 
-                first_cols = ['ID','Provenance ID','Origin','Latitude','Longitude','Elevation (m)','Mean Height (m)','Survival (%)',\
-                          'Age at Height Measurement (years)','Age at Survival Measurement (years)']
-                new_df = new_df[ first_cols + [ col for col in new_df.columns if col not in first_cols ] ]
-            except: 
-                first_cols = ['ID','Provenance ID','Origin','Latitude','Longitude','Mean Height (m)','Survival (%)',\
-                          'Age at Height Measurement (years)','Age at Survival Measurement (years)']
-                new_df = new_df[ first_cols + [ col for col in new_df.columns if col not in first_cols ] ]
-
-
-    else:
-        print('No survival record detected in table.')
-        #In this case, add empty column with -9999
-        origin_dataframe = origin_dataframe.assign(col_name1=-9999) #Add the height column
-        origin_dataframe.rename(columns={'col_name1':'Survival (%)'}, inplace=True)
-        origin_dataframe = origin_dataframe.assign(col_name2=-9999) #Add the age column
-        origin_dataframe.rename(columns={'col_name2':'Age at Survival Measurement (years)'}, inplace=True)
-        new_df = origin_dataframe.copy()
-        try: 
-            first_cols = ['ID','Provenance ID','Origin','Latitude','Longitude','Elevation (m)','Mean Height (m)','Survival (%)',\
-                          'Age at Height Measurement (years)','Age at Survival Measurement (years)']
-            new_df = new_df[ first_cols + [ col for col in new_df.columns if col not in first_cols ] ]
-        except: 
-            first_cols = ['ID','Provenance ID','Origin','Latitude','Longitude','Mean Height (m)','Survival (%)',\
-                          'Age at Height Measurement (years)','Age at Survival Measurement (years)']
-            new_df = new_df[ first_cols + [ col for col in new_df.columns if col not in first_cols ] ]
-    return new_df
 
 def add_empty_cols(pd_dataframe):
     '''Add the empty phenology columns for the datasets that do not come with them.
@@ -209,34 +112,37 @@ def add_empty_cols(pd_dataframe):
     if 'Days Between Leaf Flush & Fall Colour 1975'not in df:
         df['Days Between Leaf Flush & Fall Colour'] = -9999
         
-    if 'Mean Needle Flush Date (# Days after January 1)'not in df:
+    if 'Mean Needle Flush Date  (# Days after January 1 1989)'not in df:
         df['Mean Needle Flush Date (# Days after January 1)'] = -9999
-    if 'Mean Date of Elongation Cessation (# Days after January 1)'not in df:
+    if 'Mean Date of Elongation Cessation  (# Days after January 1 1989)'not in df:
         df['Mean Date of Elongation Cessation (# Days after January 1)'] = -9999
-    if 'Mean Elongation Duration (# Days after January 1)'not in df:
+    if 'Mean Elongation Duration  (# Days)'not in df:
         df['Mean Elongation Duration (# Days after January 1)'] = -9999
-    if 'Mean Date of Elongation Initiation (# Days after January 1)'not in df:
+    if 'Mean Date of Elongation Initiation  (# Days after January 1 1989)'not in df:
         df['Mean Date of Elongation Initiation (# Days after January 1)'] = -9999
-    if 'Budset Stage 2 (# Days after January 1)'not in df:
-        df['Budset Stage 2 (# Days after January 1)'] = -9999
-    if 'Budset Stage 3 (# Days after January 1)'not in df:
+    if 'Budset Stage 2 (# Days after January 1, 2003)'not in df:
+        df['Budset Stage 2 (# Days after January 1, 2003)'] = -9999
+    if 'Budset Stage 3 (# Days after January 1, 2003)'not in df:
         df['Budset Stage 3 (# Days after January 1)'] = -9999
-    if 'Budset Stage 4 (# Days after January 1)'not in df:
+    if 'Budset Stage 4 (# Days after January 1, 2003)'not in df:
         df['Budset Stage 4 (# Days after January 1)'] = -9999    
-    if 'Budset Stage 5 (# Days after January 1)'not in df:
+    if 'Budset Stage 5 (# Days after January 1, 2003)'not in df:
         df['Budset Stage 5 (# Days after January 1)'] = -9999        
-    if 'Budflush Stage 2 (# Days after January 1)'not in df:
+    if 'Budflush Stage 2 (# Days after January 1, 2003)'not in df:
         df['Budflush Stage 2 (# Days after January 1)'] = -9999
-    if 'Budflush Stage 3 (# Days after January 1)'not in df:
+    if 'Budflush Stage 3 (# Days after January 1, 2003)' not in df:
         df['Budflush Stage 3 (# Days after January 1)'] = -9999
-    if 'Budflush Stage 4 (# Days after January 1)'not in df:
+    if 'Budflush Stage 4 (# Days after January 1, 2003)'not in df:
         df['Budflush Stage 4 (# Days after January 1)'] = -9999
-    if 'Budflush Stage 5 (# Days after January 1)'not in df:
+    if 'Budflush Stage 5 (# Days after January 1, 2003)'not in df:
         df['Budflush Stage 5 (# Days after January 1)'] = -9999
-    if 'Budflush Stage 6 (# Days after January 1)'not in df:
+    if 'Budflush Stage 6 (# Days after January 1, 2003)'not in df:
         df['Budflush Stage 6 (# Days after January 1)'] = -9999
     if 'Phenology Reference Date' not in df:
         df['Phenology Reference Date'] = -9999
+    if 'Elevation (m)' not in df:
+        df['Elevation (m)'] = -9999
+        
     return df
     
 def print_to_csv(pandas_dataframe,file_name,export_path):
