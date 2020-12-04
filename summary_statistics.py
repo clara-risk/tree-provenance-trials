@@ -143,8 +143,79 @@ def get_stat(file_path,stat_type):
         else:
             print('That is not a valid stat type!') 
                
+def get_provenance_stat(file_path,var):
+    overall_dict = {} 
+    for subdir, dirs, files in os.walk(file_path):
+        for filename in files:
+            if filename.endswith('.csv'):
+                try:
 
+                    df = pd.read_csv(subdir+'/'+filename,engine='python')
+                    lats = df['Latitude']
+                    lons = df['Longitude']
+                    vals = df[var]
+
+                    for Lat,Lon,Val in zip(lats,lons,vals):
+                        if Val != -9999: #in case of no data 
+                            overall_dict[(Lat,Lon,)] = Val
+                            
+                except:
+                    print(var)
+                    print(filename)
+
+    print(overall_dict) 
+    if len(overall_dict.keys()) > 0:
+        mean_val = round(sum(overall_dict.values())/len(overall_dict.values()),2)
+        stdev_val = round(statistics.stdev(overall_dict.values()),2)
+        min_val = round(min(overall_dict.values()),2)
+        max_val = round(max(overall_dict.values()),2)
+        print(mean_val)
+        return mean_val,stdev_val,min_val,max_val
+    else:
+        return -9999,-9999,-9999,-9999
+                          
+
+def combine_provenance_stat(database_path,value_names,stat_type):
+    dictionary_send_to_file = {}
+    for var_name in value_names:
+        averaged,stdev,minimum,maximum = get_provenance_stat(database_path,var_name)
+        if stat_type == 'mean': 
+            dictionary_send_to_file[var_name] = averaged
+        elif stat_type == 'stdev':
+            dictionary_send_to_file[var_name] = stdev
+        elif stat_type == 'min':
+            dictionary_send_to_file[var_name] = minimum
+        elif stat_type == 'max':
+            dictionary_send_to_file[var_name] = maximum
+        else:
+            print('That is not a valid statistics type!') 
+            
+    out_path = os.getcwd()
+    with open(out_path+'/'+stat_type+'_RES.csv', 'w', newline='') as csv_file:  
+        writer = csv.writer(csv_file)
+        
+        for key, value in dictionary_send_to_file.items():
+            writer.writerow([key, value])
 
 if __name__ == "__main__":
-    file_path = '' #insert path to trial sites database
+    file_path = '' #insert path to test sites database
     get_stat(file_path,'min') #mean, stdev, max, min 
+    file_path_trial = '' #insert path to trial sites database
+    
+    value_names = ['Mean Diurnal Range (°C)','Isothermality 2/7','Temperature Seasonality (°C)','Max Temperature Warmest Period (°C)','Min Temperature Coldest Period (°C)',\
+    'Temperature Annual Range (°C)','Mean Temperature of Wettest Quarter (°C)','Mean Temperature Driest Quarter (°C)','Mean Temperature Warmest Quarter (°C)',\
+    'Mean Temperature Coldest Quarter (°C)','Annual Precipitation (mm)','Precipitation of Wettest Period (mm)','Precipitation of Driest Period (mm)',\
+    'Precipitation Seasonality','Precipitation of Wettest Quarter (mm)','Precipitation of Driest Quarter (mm)','Precipitation of Warmest Quarter (mm)',\
+    'Precipitation of Coldest Quarter (mm)','Start of Growing Season (Julian day)','End of Growing Season (Julian day)','Length of Growing Season (# days)',\
+    'Total Precipitation for Period 1 (mm)','Total Precipitation for Period 3 (mm)','Gdd Above Base_Temp for Period 3 (Degree days)','Annual Mean Temperature (°C)',\
+    'Annual Minimum Temperature (°C)','Annual Maximum Temperature (°C)','Mean Temperature Period 3 (°C)','Temperature Range for Period 3 (°C)','Jan Mean Monthly Min Temp (°C)',\
+    'Feb Mean Monthly Min Temp (°C)','Mar Mean Monthly Min Temp (°C)','Apr Mean Monthly Min Temp (°C)','May Mean Monthly Min Temp (°C)','Jun Mean Monthly Min Temp (°C)',\
+    'Jul Mean Monthly Min Temp (°C)','Aug Mean Monthly Min Temp (°C)','Sep Mean Monthly Min Temp (°C)','Oct Mean Monthly Min Temp (°C)','Nov Mean Monthly Min Temp (°C)',\
+    'Dec Mean Monthly Min Temp (°C)','Jan Mean Monthly Max Temp  (°C)','Feb Mean Monthly Max Temp  (°C)','Mar Mean Monthly Max Temp  (°C)','Apr Mean Monthly Max Temp  (°C)',\
+    'May Mean Monthly Max Temp  (°C)','Jun Mean Monthly Max Temp  (°C)','Jul Mean Monthly Max Temp  (°C)','Aug Mean Monthly Max Temp  (°C)','Sep Mean Monthly Max Temp  (°C)',\
+    'Oct Mean Monthly Max Temp  (°C)','Nov Mean Monthly Max Temp  (°C)','Dec Mean Monthly Max Temp  (°C)','Jan Mean Monthly Precipitation (mm)',\
+    'Feb Mean Monthly Precipitation (mm)','Mar Mean Monthly Precipitation (mm)','Apr Mean Monthly Precipitation (mm)','May Mean Monthly Precipitation (mm)',\
+    'Jun Mean Monthly Precipitation (mm)','Jul Mean Monthly Precipitation (mm)','Aug Mean Monthly Precipitation (mm)','Sep Mean Monthly Precipitation (mm)',\
+    'Oct Mean Monthly Precipitation (mm)','Nov Mean Monthly Precipitation (mm)','Dec Mean Monthly Precipitation (mm)']
+    combine_provenance_stat(file_path2,value_names,'min') #mean, stdev, max, min 
+    
