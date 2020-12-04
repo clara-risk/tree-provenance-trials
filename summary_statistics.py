@@ -104,7 +104,7 @@ def get_stat(file_path,stat_type):
             if val[-1].isdigit(): 
                 result.setdefault(key, []).append(float(val))
 
-    final_mean = {i:sum(result[i])/len(result[i]) for i in result}
+    final_mean = {i:round(sum(result[i])/len(result[i]),2) for i in result}
 
     #Check if correct length
     length_list = [] 
@@ -127,16 +127,16 @@ def get_stat(file_path,stat_type):
                writer.writerow([key, value])
         elif stat_type == 'stdev':
             #Take the standard deviation of the means of each test site
-            final_stdev = {i:statistics.stdev(result[i]) for i in result}
+            final_stdev = {i:round(statistics.stdev(result[i]),2) for i in result}
             for key, value in final_stdev.items():
                writer.writerow([key, value])
         elif stat_type == 'max':
-            final_max = {i:max(result[i]) for i in result}
+            final_max = {i:round(max(result[i]),2) for i in result}
             for key, value in final_max.items():
                writer.writerow([key, value])
         elif stat_type == 'min':
                    
-            final_min = {i:min(result[i]) for i in result}
+            final_min = {i:round(min(result[i]),2) for i in result}
             for key, value in final_min.items():
                writer.writerow([key, value])
 
