@@ -1,5 +1,5 @@
 # tree-provenance-trials
-Code for processing data available in the database located at: https://knb.ecoinformatics.org/view/doi%3A10.5063%2FF1VM49N5
+Code for processing data available in the database located at: https://knb.ecoinformatics.org/view/doi%3A10.5063%2FK072NQ
 
 This repository contains the following Python scripts: 
 
