@@ -5,6 +5,7 @@ import glob
 import math, statistics
 
 def get_stat(file_path,stat_type):
+    '''Calculate mean, stdev, min, max for records in the test sites database.'''
     dict_of_val = {} 
     dates = {}
     test_sites = []
@@ -144,6 +145,7 @@ def get_stat(file_path,stat_type):
             print('That is not a valid stat type!') 
                
 def get_provenance_stat(file_path,var):
+    '''Create a dictionary of values for each variable for each UNIQUE seed source location.'''
     overall_dict = {} 
     for subdir, dirs, files in os.walk(file_path):
         for filename in files:
@@ -176,6 +178,7 @@ def get_provenance_stat(file_path,var):
                           
 
 def combine_provenance_stat(database_path,value_names,stat_type):
+    '''Calculate the mean, stdev, max, min each variable for each UNIQUE seed source location.'''
     dictionary_send_to_file = {}
     for var_name in value_names:
         averaged,stdev,minimum,maximum = get_provenance_stat(database_path,var_name)
