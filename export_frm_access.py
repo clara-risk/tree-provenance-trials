@@ -10,7 +10,7 @@ import csv
 
 
 def export_frm_access(access_file,file_out,tbl):
-
+     '''Export each table from the Microsoft Access database in csv format.'''
 
      #Connect to the access database
      pypyodbc.lowercase = False
